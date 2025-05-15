@@ -87,7 +87,7 @@ app.get('/', (req, res) => {
       googleSignIn: firebaseInitialized,
       persistentSessions: true,
       requireEmailVerification: REQUIRE_EMAIL_VERIFICATION,
-      emailService: !!process.env.EMAIL_USER && !!process.env.EMAIL_PASS
+      emailService: !!process.env.BREVO_SMTP_USER && !!process.env.BREVO_SMTP_KEY
     }
   });
 });
@@ -139,10 +139,12 @@ const authenticateJWT = (req, res, next) => {
 
 // Email sender
 export const transporter = nodemailer.createTransport({
-  service: 'gmail',
+  host: 'smtp-relay.brevo.com',
+  port: 587,
+  secure: false, // Use TLS
   auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS,
+    user: process.env.BREVO_SMTP_USER, // Your Brevo account email
+    pass: process.env.BREVO_SMTP_KEY,  // Your Brevo SMTP key
   },
 });
 
@@ -303,12 +305,12 @@ export const sendOTP = async (to, otp, purpose = 'email verification') => {
     `;
 
     const info = await transporter.sendMail({
-      from: `"Jairisys" <${process.env.EMAIL_USER}>`,
-      to,
-      subject,
-      html,
-      text,
-    });
+    from: `"Jairisys Learn" <noreply@jairisys.tech>`,
+    to,
+    subject,
+    html,
+    text,
+  });
     console.log(`OTP email sent successfully to ${to} for ${purpose}. Message ID:`, info.messageId);
     return info;
   } catch (err) {
@@ -435,12 +437,12 @@ export const sendVoucherEmail = async (to, voucherDetails) => {
     `;
 
     const info = await transporter.sendMail({
-      from: `"JLearn" <${process.env.EMAIL_USER}>`,
-      to,
-      subject,
-      html,
-      text,
-    });
+    from: `"Jairisys tech" <noreply@jairisys.tech>`, // Use verified sender
+    to,
+    subject,
+    html,
+    text,
+  });
 
     console.log(`Voucher email sent successfully to ${to}. Message ID:`, info.messageId);
     return info;
@@ -582,8 +584,8 @@ export const sendWelcomeEmail = async (to, username) => {
       © ${new Date().getFullYear()} Jairisys.tech. All rights reserved.
     `;
 
-    const info = await transporter.sendMail({
-      from: `"Jairisys" <${process.env.EMAIL_USER}>`,
+      const info = await transporter.sendMail({
+      from: `"Jairisys Learn" <noreply@jairisys.tech>`, // Use verified sender
       to,
       subject,
       html,
