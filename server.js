@@ -1320,6 +1320,62 @@ app.post('/achievements/add-xp', authenticateJWT, async (req, res) => {
 });
 
 
+
+// NEW ENDPOINT: Achievements endpoint - DEDUCT XP/COINS
+app.post('/achievements/deduct-xp', authenticateJWT, async (req, res) => {
+  const { xp } = req.body;
+  const xpToDeduct = xp;
+
+  // Validate the input
+  if (!xpToDeduct || typeof xpToDeduct !== 'number' || xpToDeduct <= 0) {
+    return res.status(400).json({ success: false, error: 'Amount to deduct must be a positive number.' });
+  }
+
+  try {
+    const db = getDB();
+    
+    // This single, atomic query is the key.
+    // If no row exists for the user_id, the WHERE clause fails,
+    // and no rows will be updated.
+    const result = await db.execute({
+      sql: `
+        UPDATE user_achievements
+        SET xp_points = xp_points - ?
+        WHERE user_id = ? AND xp_points >= ?
+      `,
+      args: [xpToDeduct, req.user.id, xpToDeduct]
+    });
+
+    // This check is crucial. It will be true if:
+    // 1. The user's row was not found (i.e., they have 0 coins).
+    // 2. The user's row was found, but their xp_points were less than xpToDeduct.
+    if (result.rowsAffected === 0) {
+      return res.status(400).json({ success: false, error: 'Insufficient XP points.' });
+    }
+
+    // This code only runs if the deduction was successful.
+    const { rows } = await db.execute({
+      sql: 'SELECT xp_points FROM user_achievements WHERE user_id = ?',
+      args: [req.user.id]
+    });
+    const newXpPoints = rows[0]?.xp_points || 0;
+
+    res.json({ 
+      success: true, 
+      message: `${xpToDeduct} XP points deducted successfully.`,
+      new_xp_points: newXpPoints 
+    });
+
+  } catch (err) {
+    console.error('Error deducting XP:', err);
+    res.status(500).json({ success: false, error: 'Failed to deduct XP points.' });
+  }
+});
+
+
+
+
+
 // XP achievements endpoint
 app.get('/achievements', authenticateJWT, async (req, res) => {
   try {
@@ -1758,3 +1814,4 @@ app.listen(PORT, () => {
   console.log('- Email service configured:', !!process.env.EMAIL_USER && !!process.env.EMAIL_PASS);
   console.log('- Auto-delete unverified users after 10 minutes');
 });
+
