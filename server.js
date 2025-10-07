@@ -1801,6 +1801,22 @@ app.delete('/account', authenticateJWT, async (req, res) => {
 });
 
 
+// admin voucher post
+app.post('/admin/stock', authenticateAdmin, async (req, res) => {
+  const { voucher_name, voucher_code, expire_date, points_price } = req.body;
+  try {
+    const db = getDB();
+    await db.execute({
+      sql: 'INSERT INTO stock (voucher_name, voucher_code, expire_date, points_price) VALUES (?, ?, ?, ?)',
+      args: [voucher_name, voucher_code, expire_date, points_price]
+    });
+    res.json({ success: true, message: 'Voucher added to stock' });
+  } catch (err) {
+    res.status(500).json({ success: false, error: 'Failed to add voucher' });
+  }
+});
+
+
 // Start server
 app.listen(PORT, () => {
   console.log(`Server started at ${getISTTimestamp()} on port ${PORT}`);
@@ -1814,4 +1830,5 @@ app.listen(PORT, () => {
   console.log('- Email service configured:', !!process.env.EMAIL_USER && !!process.env.EMAIL_PASS);
   console.log('- Auto-delete unverified users after 10 minutes');
 });
+
 
