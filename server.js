@@ -1802,7 +1802,7 @@ app.delete('/account', authenticateJWT, async (req, res) => {
 
 
 // admin voucher post
-app.post('/admin/stock', authenticateAdmin, async (req, res) => {
+app.post('/admin/stock', async (req, res) => {
   const { voucher_name, voucher_code, expire_date, points_price } = req.body;
   try {
     const db = getDB();
@@ -1830,5 +1830,6 @@ app.listen(PORT, () => {
   console.log('- Email service configured:', !!process.env.EMAIL_USER && !!process.env.EMAIL_PASS);
   console.log('- Auto-delete unverified users after 10 minutes');
 });
+
 
 
